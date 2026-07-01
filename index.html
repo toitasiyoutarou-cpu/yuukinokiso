@@ -1,12 +1,117 @@
-<!doctype html><html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>ChemQuest Organic 2</title><link rel="stylesheet" href="./style.css"></head><body>
-<aside class="sidebar"><div class="brand"><div class="logo">🌿</div><div><h1>ChemQuest</h1><p>有機化学を楽しく、確実に。</p></div></div>
-<nav><button class="nav active" data-page="home">🏠 ホーム</button><button class="nav" data-page="units">📚 学習単元一覧</button><button class="nav" data-page="quiz">✅ 正誤問題</button><button class="nav" data-page="map">🧪 合成マップ</button><button class="nav" data-page="dictionary">📖 図鑑</button><button class="nav" data-page="progress">📊 学習記録</button></nav>
-<section class="side-card"><h2>習熟度サマリー</h2><div class="circle"><span id="totalRate">0%</span></div><p>正解 <b id="correctCount">0</b> / 挑戦 <b id="tryCount">0</b></p></section>
-<section class="side-card soft"><h2>今日のおすすめ</h2><p>正誤問題10問で<br>知識をチェック</p><button class="small startQuiz">始める</button></section></aside>
-<main class="main"><section class="hero"><div><p class="pill">ChemQuest Organic 2</p><h2>こんにちは！今日も一緒にがんばろう！</h2><p>数研出版「化学」の流れを意識して、有機化学を教科書順に整理しました。</p><div class="hero-buttons"><button class="primary startQuiz">正誤問題で知識チェック</button><button class="ghost goUnits">教科書順に学習</button></div></div><div class="hero-art"><span class="bubble">-OH</span><span class="bubble">COOH</span><span class="bubble">C=C</span><div class="book">📗🧪</div></div></section>
-<section id="home" class="page active"><div class="section-head"><div><h2>学習単元一覧（教科書順）</h2><p>有機化学を単元ごとに確認できます。</p></div><div class="filters"><button class="filter active" data-filter="all">すべて</button><button class="filter" data-filter="未学習">未学習</button><button class="filter" data-filter="学習中">学習中</button><button class="filter" data-filter="定着">定着</button></div></div><div id="homeUnits" class="unit-list"></div></section>
-<section id="units" class="page"><div class="section-head"><div><h2>学習単元一覧</h2><p>カードを押すと、その単元の正誤問題に移動します。</p></div></div><div id="unitCards" class="unit-grid"></div></section>
-<section id="quiz" class="page"><div class="quiz-shell"><div class="quiz-top"><div><p class="pill">True / False</p><h2>正誤問題</h2><p>共通テスト対策という名称ではなく、まずは知識確認の○×問題です。</p></div><select id="quizUnit"></select></div><div class="quiz-card"><p id="quizMeta">単元</p><h3 id="quizText">問題を読み込み中...</h3><div class="tf-buttons"><button id="trueBtn">○ 正しい</button><button id="falseBtn">× 誤り</button></div><p id="feedback"></p><button id="nextBtn" class="ghost">次の問題</button></div></div></section>
-<section id="map" class="page"><div class="section-head"><div><h2>合成マップ</h2><p>代表的な有機化合物のつながりを確認します。</p></div></div><div class="map-wrap"><div class="reaction-map" id="reactionMap"></div><aside class="map-detail"><p class="pill">Reaction</p><h3 id="mapTitle">反応を選択</h3><p id="mapBody">矢印や物質をクリックすると説明が出ます。</p></aside></div></section>
-<section id="dictionary" class="page"><div class="section-head"><div><h2>図鑑</h2><p>官能基・代表反応・試薬を検索できます。</p></div><input id="searchDict" placeholder="用語を検索"></div><div id="dictGrid" class="dict-grid"></div></section>
-<section id="progress" class="page"><div class="section-head"><div><h2>学習記録</h2><p>単元ごとの習熟度を確認できます。</p></div><button id="resetBtn" class="ghost">記録リセット</button></div><div id="progressGrid" class="progress-grid"></div></section></main><script type="module" src="./app.js"></script></body></html>
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>ChemQuest Organic Self Study</title>
+  <link rel="stylesheet" href="./style.css">
+</head>
+<body>
+  <aside class="sidebar">
+    <div class="brand"><div class="brand-icon">🧪</div><div><h1>ChemQuest</h1><p>有機化学を楽しく、確実に。</p></div></div>
+    <nav>
+      <button class="nav active" data-page="home">🏠 ホーム</button>
+      <button class="nav" data-page="units">▦ 単元選択</button>
+      <button class="nav" data-page="qa">⚡ 一問一答</button>
+      <button class="nav" data-page="tf">✅ 正誤問題</button>
+      <button class="nav" data-page="route">🧬 製法クイズ</button>
+      <button class="nav" data-page="map">🗺️ 合成マップ</button>
+      <button class="nav" data-page="dict">📖 図鑑</button>
+      <button class="nav" data-page="record">📊 学習記録</button>
+    </nav>
+    <section class="side-card">
+      <h2>習熟度サマリー</h2>
+      <div class="donut" id="donut"><span id="overallRate">0%</span></div>
+      <div class="summary-line"><span>挑戦</span><b id="tryCount">0</b></div>
+      <div class="summary-line"><span>正解</span><b id="correctCount">0</b></div>
+      <div class="summary-line"><span>弱点</span><b id="weakCount">0</b></div>
+    </section>
+    <section class="side-card">
+      <h2>収録</h2>
+      <div class="big-number"><span id="totalCount">0</span>問</div>
+      <p class="muted">一問一答・正誤・製法</p>
+    </section>
+  </aside>
+
+  <main class="main">
+    <section class="hero">
+      <div>
+        <h2>有機化学を、反応のつながりで覚える。</h2>
+        <p>記述問題をそのまま解く前に、必要な知識を「一問一答」「正誤」「製法」「合成マップ」で確認しよう。</p>
+        <div class="chips"><span>製法</span><span>官能基</span><span>確認反応</span><span>構造推定</span></div>
+      </div>
+      <div class="hero-emoji">🧪</div>
+    </section>
+
+    <section id="home" class="page active">
+      <h2 class="section-title">▣ 分野を選択</h2>
+      <div id="unitCards" class="unit-grid"></div>
+      <section class="setting-box">
+        <div><b>📝 学習モード</b></div>
+        <label>単元 <select id="unitSelect"></select></label>
+        <label>問題数 <select id="countSelect"><option value="5">5問</option><option value="10">10問</option><option value="20">20問</option><option value="all">全問</option></select></label>
+        <button class="primary" id="startQa">一問一答 →</button>
+        <button class="primary" id="startTf">正誤問題 →</button>
+        <button class="primary" id="startRoute">製法クイズ →</button>
+        <button class="outline" id="resetBtn">記録リセット</button>
+      </section>
+      <section class="record-panel">
+        <h2>📊 学習記録</h2>
+        <table><thead><tr><th>分野</th><th>正解</th><th>挑戦</th><th>習熟度</th></tr></thead><tbody id="recordRowsHome"></tbody></table>
+      </section>
+    </section>
+
+    <section id="units" class="page">
+      <div class="page-head"><h2>単元選択</h2><p>問題冊子の構成を参考に、自学しやすい単元に再構成。</p></div>
+      <div id="unitList" class="unit-list"></div>
+    </section>
+
+    <section id="qa" class="page">
+      <div class="quiz-box">
+        <div class="quiz-head"><div><p id="qaMeta">一問一答</p><h2 id="qaUnitTitle">単元</h2></div><div id="qaProgress" class="quiz-progress">1 / 5</div></div>
+        <h3 id="qaQuestion">問題</h3>
+        <button id="showAnswer" class="primary">答えを見る</button>
+        <div id="answerBox" class="answer-box hidden"></div>
+        <div class="tf hidden" id="qaJudge"><button id="qaGood">覚えた</button><button id="qaBad">まだ不安</button></div>
+      </div>
+    </section>
+
+    <section id="tf" class="page">
+      <div class="quiz-box">
+        <div class="quiz-head"><div><p id="tfMeta">正誤問題</p><h2 id="tfUnitTitle">単元</h2></div><div id="tfProgress" class="quiz-progress">1 / 5</div></div>
+        <h3 id="tfQuestion">問題</h3>
+        <div class="tf"><button id="trueBtn">○ 正しい</button><button id="falseBtn">× 誤り</button></div>
+        <p id="tfFeedback"></p>
+        <button id="tfNext" class="outline">次の問題</button>
+      </div>
+    </section>
+
+    <section id="route" class="page">
+      <div class="quiz-box">
+        <div class="quiz-head"><div><p id="routeMeta">製法・反応ルート</p><h2 id="routeUnitTitle">単元</h2></div><div id="routeProgress" class="quiz-progress">1 / 5</div></div>
+        <h3 id="routeQuestion">問題</h3>
+        <div id="routeChoices" class="choices"></div>
+        <p id="routeFeedback"></p>
+        <button id="routeNext" class="outline">次の問題</button>
+      </div>
+    </section>
+
+    <section id="map" class="page">
+      <div class="page-head"><h2>合成マップ</h2><p>エチレン系列・ベンゼン系列を矢印で整理。</p></div>
+      <div class="map-layout"><div id="mapCanvas" class="map-canvas"></div><aside class="map-detail"><h3 id="mapTitle">反応を選択</h3><p id="mapBody">物質や条件をクリックすると説明が出ます。</p></aside></div>
+    </section>
+
+    <section id="dict" class="page">
+      <div class="page-head"><h2>図鑑</h2><input id="dictSearch" placeholder="用語を検索"></div>
+      <div id="dictGrid" class="dict-grid"></div>
+    </section>
+
+    <section id="record" class="page">
+      <div class="page-head"><h2>学習記録</h2><p>モード別ではなく、単元ごとに集計。</p></div>
+      <div class="record-panel"><table><thead><tr><th>分野</th><th>正解</th><th>挑戦</th><th>習熟度</th></tr></thead><tbody id="recordRows"></tbody></table></div>
+      <div id="weakList" class="weak-list"></div>
+    </section>
+  </main>
+  <script type="module" src="./app.js"></script>
+</body>
+</html>
