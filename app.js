@@ -26,10 +26,10 @@ function save(){localStorage.setItem(LS,JSON.stringify(state));renderAll()}
 function renderSummary(){const o=overall();$("#overallRate").textContent=o.rate+"%";$("#donut").style.setProperty("--p",o.rate+"%");$("#tryCount").textContent=o.tries;$("#correctCount").textContent=o.correct;$("#weakCount").textContent=o.weak;$("#totalCount").textContent=allItems().length}
 function renderUnits(){
   $("#unitSelect").innerHTML=units.map(u=>`<option value="${u.id}">${u.title}</option>`).join(""); $("#unitSelect").value=state.selectedUnit;
-  $("#unitCards").innerHTML=units.map((u,i)=>{const s=stats(u.id),c=unitCounts(u.id);return `<article class="unit-card ${u.color}" data-id="${u.id}"><div class="num">${i+1}</div><div class="unit-icon">${u.icon}</div><h3>${u.title}</h3><p>${u.desc}</p><div class="counts"><span>一答 ${c.qa}</span><span>正誤 ${c.tf}</span><span>選択 ${c.choice}</span><span>製法 ${c.route}</span></div><div><div class="progress-label">習熟度　${s.rate}%</div><div class="bar"><div style="width:${s.rate}%"></div></div></div><div class="badge">${s.label}</div></article>`}).join("");
-  $("#unitCards").querySelectorAll(".unit-card").forEach(el=>el.addEventListener("click",()=>{state.selectedUnit=el.dataset.id;$("#unitSelect").value=state.selectedUnit;save()}));
+  $("#unitCards").innerHTML=units.map((u,i)=>{const s=stats(u.id),c=unitCounts(u.id);return `<article class="unit-card ${u.color}" data-id="${u.id}"><div class="num">${i+1}</div><div class="unit-icon">${u.icon}</div><h3>${u.title}</h3><p>${u.desc}</p><div class="counts"><span>一答 ${c.qa}</span><span>正誤 ${c.tf}</span><span>選択 ${c.choice}</span><span>製法 ${c.route}</span></div><div class="quick-starts"><button data-quick="qa">一答</button><button data-quick="tf">正誤</button><button data-quick="choice">選択</button><button data-quick="route">製法</button></div><button class="start-main" data-quick="choice">この単元を始める →</button><div><div class="progress-label">習熟度　${s.rate}%</div><div class="bar"><div style="width:${s.rate}%"></div></div></div><div class="badge">${s.label}</div></article>`}).join("");
+  $("#unitCards").querySelectorAll(".unit-card").forEach(el=>el.addEventListener("click",(ev)=>{const mode=ev.target?.dataset?.quick;state.selectedUnit=el.dataset.id;$("#unitSelect").value=state.selectedUnit;if(mode){start(mode)}else{start("choice")}}));
   $("#unitList").innerHTML=units.map((u,i)=>{const s=stats(u.id),c=unitCounts(u.id);return `<article class="unit-row" data-id="${u.id}"><div class="num">${i+1}</div><div><h3>${u.icon} ${u.title}</h3><p>${u.short}｜一答${c.qa}・正誤${c.tf}・選択${c.choice}・製法${c.route}</p><div class="bar"><div style="width:${s.rate}%"></div></div></div><b>${s.rate}%</b></article>`}).join("");
-  $("#unitList").querySelectorAll(".unit-row").forEach(el=>el.addEventListener("click",()=>{state.selectedUnit=el.dataset.id;$("#unitSelect").value=state.selectedUnit;showPage("home")}));
+  $("#unitList").querySelectorAll(".unit-row").forEach(el=>el.addEventListener("click",()=>{state.selectedUnit=el.dataset.id;$("#unitSelect").value=state.selectedUnit;start("choice")}));
 }
 function showPage(p){$$(".page").forEach(x=>x.classList.remove("active"));$("#"+p).classList.add("active");$$(".nav").forEach(n=>n.classList.toggle("active",n.dataset.page===p))}
 function mark(type,item,ok){const k=key(type,item.id);state.tries[k]=true;if(ok){state.correct[k]=true;delete state.wrong[k]}else{delete state.correct[k];state.wrong[k]=true}localStorage.setItem(LS,JSON.stringify(state));renderSummary();renderRecords();renderUnits()}
@@ -37,16 +37,24 @@ function start(mode){activeMode=mode;state.selectedUnit=$("#unitSelect").value||
 function showQa(){const q=sets.qa[idx];if(!q)return;$("#qaUnitTitle").textContent=units.find(u=>u.id===q.unit).title;$("#qaProgress").textContent=`${idx+1} / ${sets.qa.length}`;$("#qaQuestion").textContent=q.q;$("#answerBox").classList.add("hidden");$("#qaJudge").classList.add("hidden");$("#answerBox").innerHTML=""}
 function showQaAnswer(){const q=sets.qa[idx];$("#answerBox").classList.remove("hidden");$("#qaJudge").classList.remove("hidden");$("#answerBox").innerHTML=`<b>答え：</b>${q.a}<br><br><b>解説：</b>${q.exp}`}
 function nextQa(){if(idx<sets.qa.length-1){idx++;showQa()}else{showPage("home");renderAll()}}
+function prevQa(){if(idx>0){idx--;showQa()}}
 function showTf(){const q=sets.tf[idx];if(!q)return;$("#tfUnitTitle").textContent=units.find(u=>u.id===q.unit).title;$("#tfProgress").textContent=`${idx+1} / ${sets.tf.length}`;$("#tfQuestion").textContent=q.text;$("#tfFeedback").textContent=""}
 function answerTf(ans){const q=sets.tf[idx],ok=ans===q.answer;mark("tf",q,ok);$("#tfFeedback").textContent=(ok?"正解！ ":"不正解。 ")+q.exp}
 function nextTf(){if(idx<sets.tf.length-1){idx++;showTf()}else{showPage("home");renderAll()}}
-function renderChoiceCommon(item, container, feedback, handler){container.innerHTML=item.choices.map(c=>`<button class="choice">${c}</button>`).join("");container.querySelectorAll(".choice").forEach(btn=>btn.addEventListener("click",()=>handler(btn,item)))}
+function prevTf(){if(idx>0){idx--;showTf()}}
+function renderChoiceCommon(item, container, feedback, handler){
+  const randomized = shuffle(item.choices || []);
+  container.innerHTML=randomized.map(c=>`<button class="choice">${c}</button>`).join("");
+  container.querySelectorAll(".choice").forEach(btn=>btn.addEventListener("click",()=>handler(btn,item)));
+}
 function showChoice(){const q=sets.choice[idx];if(!q)return;$("#choiceUnitTitle").textContent=units.find(u=>u.id===q.unit).title;$("#choiceProgress").textContent=`${idx+1} / ${sets.choice.length}`;$("#choiceQuestion").textContent=q.q;$("#choiceFeedback").textContent="";renderChoiceCommon(q,$("#choiceOptions"),$("#choiceFeedback"),answerChoice)}
 function answerChoice(btn,q){const ok=btn.textContent===q.answer;mark("choice",q,ok);$("#choiceOptions").querySelectorAll(".choice").forEach(b=>{if(b.textContent===q.answer)b.classList.add("correct");else if(b===btn)b.classList.add("wrong");b.disabled=true});$("#choiceFeedback").textContent=(ok?"正解！ ":"不正解。 ")+q.exp}
 function nextChoice(){if(idx<sets.choice.length-1){idx++;showChoice()}else{showPage("home");renderAll()}}
+function prevChoice(){if(idx>0){idx--;showChoice()}}
 function showRoute(){const r=sets.route[idx];if(!r)return;$("#routeUnitTitle").textContent=units.find(u=>u.id===r.unit).title;$("#routeProgress").textContent=`${idx+1} / ${sets.route.length}`;$("#routeQuestion").textContent=r.q;$("#routeFeedback").textContent="";let opts=shuffle([r.answer,...routes.filter(x=>x.to!==r.answer).map(x=>x.to)]);opts=[...new Set(opts)].slice(0,4);if(!opts.includes(r.answer))opts[0]=r.answer;const item={...r,choices:shuffle(opts),answer:r.answer};renderChoiceCommon(item,$("#routeChoices"),$("#routeFeedback"),answerRoute)}
 function answerRoute(btn,r){const ok=btn.textContent===r.answer;mark("route",r,ok);$("#routeChoices").querySelectorAll(".choice").forEach(b=>{if(b.textContent===r.answer)b.classList.add("correct");else if(b===btn)b.classList.add("wrong");b.disabled=true});$("#routeFeedback").textContent=(ok?"正解！ ":"不正解。 ")+r.exp}
 function nextRoute(){if(idx<sets.route.length-1){idx++;showRoute()}else{showPage("home");renderAll()}}
+function prevRoute(){if(idx>0){idx--;showRoute()}}
 function renderRecords(){const rows=units.map(u=>{const s=stats(u.id);return `<tr><td>${u.title}</td><td>${s.correct}</td><td>${s.tries}</td><td>${s.rate}%</td><td>${s.total}</td></tr>`}).join("");$("#recordRows").innerHTML=rows;const wrong=allItems().filter(x=>state.wrong[key(x.type,x.id)]);$("#weakList").innerHTML=wrong.length?wrong.map(x=>`<article class="weak-card"><b>${units.find(u=>u.id===x.unit)?.title||""}</b><p>${x.q||x.text}</p><small>${x.exp}</small></article>`).join(""):""}
 function renderDict(){const w=($("#dictSearch").value||"").trim();const list=dictionary.filter(d=>!w||`${d.term}${d.category}${d.formula}${d.desc}`.includes(w));$("#dictGrid").innerHTML=list.map(d=>`<article class="dict-card"><span class="tag">${d.category}</span><h3>${d.term}</h3><p><b>${d.formula}</b></p><p>${d.desc}</p></article>`).join("")}
 function renderMap(){
@@ -60,9 +68,9 @@ function renderAll(){renderSummary();renderUnits();renderRecords();renderDict();
 $$(".nav").forEach(n=>n.addEventListener("click",()=>showPage(n.dataset.page)));
 $$("[data-start]").forEach(b=>b.addEventListener("click",()=>start(b.dataset.start)));
 $("#unitSelect").addEventListener("change",e=>{state.selectedUnit=e.target.value;save()});
-$("#showAnswer").addEventListener("click",showQaAnswer);$("#qaGood").addEventListener("click",()=>{mark("qa",sets.qa[idx],true);nextQa()});$("#qaBad").addEventListener("click",()=>{mark("qa",sets.qa[idx],false);nextQa()});
-$("#trueBtn").addEventListener("click",()=>answerTf(true));$("#falseBtn").addEventListener("click",()=>answerTf(false));$("#tfNext").addEventListener("click",nextTf);
-$("#choiceNext").addEventListener("click",nextChoice);$("#routeNext").addEventListener("click",nextRoute);
+$("#showAnswer").addEventListener("click",showQaAnswer);$("#qaGood").addEventListener("click",()=>{mark("qa",sets.qa[idx],true);nextQa()});$("#qaBad").addEventListener("click",()=>{mark("qa",sets.qa[idx],false);nextQa()});$("#qaPrev").addEventListener("click",prevQa);
+$("#trueBtn").addEventListener("click",()=>answerTf(true));$("#falseBtn").addEventListener("click",()=>answerTf(false));$("#tfNext").addEventListener("click",nextTf);$("#tfPrev").addEventListener("click",prevTf);
+$("#choiceNext").addEventListener("click",nextChoice);$("#choicePrev").addEventListener("click",prevChoice);$("#routeNext").addEventListener("click",nextRoute);$("#routePrev").addEventListener("click",prevRoute);
 $("#dictSearch").addEventListener("input",renderDict);
 $("#resetBtn").addEventListener("click",()=>{if(confirm("記録をリセットしますか？")){state={tries:{},correct:{},wrong:{},selectedUnit:"u01"};save()}});
 renderAll();
