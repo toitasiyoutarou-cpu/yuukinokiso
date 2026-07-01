@@ -62,18 +62,30 @@ function start(mode, customList=null, unitOverride=null){
   const unitId = unitOverride || $("#unitSelect")?.value || state.selectedUnit;
   setSelectedUnit(unitId);
   let pool = customList ? customList : byUnit(mode,state.selectedUnit);
+
+  // 製法が0問の単元で左バーから押した場合は、同じ単元の選択問題へ自動で逃がす
+  if(!pool.length && mode==="route"){
+    const alt = byUnit("choice", state.selectedUnit);
+    if(alt.length){
+      alert("この単元には製法クイズがまだ少ないため、選択問題を開きます。");
+      mode = "choice";
+      pool = alt;
+    }
+  }
+
   if(!pool.length){
-    alert("この単元には、この形式の問題がまだありません。別の形式を選んでください。");
+    alert("この単元には、この形式の問題がまだありません。単元カードの問題数を確認してください。");
     showPage("home");
     return;
   }
-  sets[mode]=customList?pool:limit(pool);
-  idx=0;
+
+  sets[mode] = customList ? pool : limit(pool);
+  idx = 0;
   showPage(mode);
-  if(mode==="qa")showQa();
-  if(mode==="tf")showTf();
-  if(mode==="choice")showChoice();
-  if(mode==="route")showRoute();
+  if(mode==="qa") showQa();
+  if(mode==="tf") showTf();
+  if(mode==="choice") showChoice();
+  if(mode==="route") showRoute();
 }
 function startWeak(){const items=allItems().filter(x=>state.wrong[key(x.type,x.id)]);startMixed(items)}
 function startBook(){const items=allItems().filter(x=>state.bookmarks?.[key(x.type,x.id)]);startMixed(items)}
@@ -92,20 +104,112 @@ function showChoice(){const q=sets.choice[idx];if(!q)return;$("#choiceUnitTitle"
 function answerChoice(btn,q){const ok=btn.textContent===q.answer;mark("choice",q,ok);$("#choiceOptions").querySelectorAll(".choice").forEach(b=>{if(b.textContent===q.answer)b.classList.add("correct");else if(b===btn)b.classList.add("wrong");b.disabled=true});$("#choiceFeedback").textContent=(ok?"正解！ ":"不正解。 ")+q.exp}
 function nextChoice(){if(idx<sets.choice.length-1){idx++;showChoice()}else{showPage("home");renderAll()}}
 function prevChoice(){if(idx>0){idx--;showChoice()}}
-function showRoute(){const r=sets.route[idx];if(!r)return;$("#routeUnitTitle").textContent=units.find(u=>u.id===r.unit).title;$("#routeProgress").textContent=`${idx+1} / ${sets.route.length}`;$("#routeQuestion").textContent=r.q;$("#routeFeedback").textContent="";let opts=shuffle([r.answer,...routes.filter(x=>x.unit===r.unit&&x.to!==r.answer).map(x=>x.to)]);opts=[...new Set(opts)];if(opts.length<4){opts=[...new Set([...opts,...routes.filter(x=>x.to!==r.answer).map(x=>x.to)])]};opts=opts.slice(0,4);if(!opts.includes(r.answer))opts[0]=r.answer;const item={...r,choices:shuffle(opts),answer:r.answer};renderChoiceCommon(item,$("#routeChoices"),answerRoute)}
+function showRoute(){
+  const r = sets.route[idx];
+  if(!r){
+    $("#routeUnitTitle").textContent = "製法・反応ルート";
+    $("#routeProgress").textContent = "0 / 0";
+    $("#routeQuestion").textContent = "この単元には製法クイズがありません。単元カードの「選択」または「一答」から始めてください。";
+    $("#routeChoices").innerHTML = "";
+    $("#routeFeedback").textContent = "";
+    return;
+  }
+  const unit = units.find(u=>u.id===r.unit);
+  $("#routeUnitTitle").textContent = unit ? unit.title : "製法・反応ルート";
+  $("#routeProgress").textContent = `${idx+1} / ${sets.route.length}`;
+  $("#routeQuestion").textContent = r.q || `${r.from}を「${r.condition}」すると何ができる？`;
+  $("#routeFeedback").textContent = "";
+
+  let opts = [r.answer, ...routes.filter(x=>x.unit===r.unit && x.to!==r.answer).map(x=>x.to)];
+  opts = [...new Set(opts)];
+  if(opts.length < 4){
+    opts = [...new Set([...opts, ...routes.filter(x=>x.to!==r.answer).map(x=>x.to)])];
+  }
+  opts = opts.slice(0,4);
+  if(!opts.includes(r.answer)) opts[0] = r.answer;
+  const item = {...r, choices:shuffle(opts), answer:r.answer};
+  renderChoiceCommon(item,$("#routeChoices"),answerRoute);
+}
 function answerRoute(btn,r){const ok=btn.textContent===r.answer;mark("route",r,ok);$("#routeChoices").querySelectorAll(".choice").forEach(b=>{if(b.textContent===r.answer)b.classList.add("correct");else if(b===btn)b.classList.add("wrong");b.disabled=true});$("#routeFeedback").textContent=(ok?"正解！ ":"不正解。 ")+r.exp}
 function nextRoute(){if(idx<sets.route.length-1){idx++;showRoute()}else{showPage("home");renderAll()}}
 function prevRoute(){if(idx>0){idx--;showRoute()}}
 function renderRecords(){const rows=units.map(u=>{const s=stats(u.id);return `<tr><td>${u.title}</td><td>${s.correct}</td><td>${s.tries}</td><td>${s.rate}%</td><td>${s.total}</td></tr>`}).join("");$("#recordRows").innerHTML=rows;const flagged=allItems().filter(x=>state.wrong[key(x.type,x.id)]||state.bookmarks?.[key(x.type,x.id)]);$("#weakList").innerHTML=flagged.length?flagged.map(x=>`<article class="weak-card"><b>${units.find(u=>u.id===x.unit)?.title||""}</b><p>${x.q||x.text}</p><small>${x.exp||""}</small></article>`).join(""):""}
 function renderDict(){const w=($("#dictSearch").value||"").trim();const list=dictionary.filter(d=>!w||`${d.term}${d.category}${d.formula}${d.desc}`.includes(w));$("#dictGrid").innerHTML=list.map(d=>`<article class="dict-card"><span class="tag">${d.category}</span><h3>${d.term}</h3><p><b>${d.formula}</b></p><p>${d.desc}</p></article>`).join("")}
-function renderMap(){const preset={"酢酸ナトリウム":[100,80],"メタン":[300,80],"クロロメタン":[500,80],"ジクロロメタン":[700,80],"クロロホルム":[900,80],"四塩化炭素":[1100,80],"炭化カルシウム":[100,180],"アセチレン":[300,180],"ベンゼン":[500,210],"エチレン":[100,330],"エタノール":[300,330],"アセトアルデヒド":[520,330],"酢酸":[740,330],"酢酸エチル":[960,330],"ポリエチレン":[300,450],"ジエチルエーテル":[520,450],"アセトン":[520,560],"ニトロベンゼン":[700,210],"アニリン":[900,210],"塩化ベンゼンジアゾニウム":[900,330],"アゾ染料":[1100,330],"フェノール＋アセトン":[700,560],"フェノール":[700,680],"トルエン":[900,560],"安息香酸":[1100,560],"サリチル酸":[900,680],"アセチルサリチル酸":[1100,680],"PET":[300,680],"ナイロン66":[520,680],"ポリ塩化ビニル":[100,560],"ポリスチレン":[100,680]};const nodes={},names=[...new Set(routes.flatMap(r=>[r.from,r.to]))];names.forEach((n,i)=>nodes[n]=preset[n]||[120+(i%6)*180,120+Math.floor(i/6)*120]);let html='<div class="stage">';routes.forEach(r=>{const a=nodes[r.from],b=nodes[r.to];if(!a||!b)return;const dx=b[0]-a[0],dy=b[1]-a[1],len=Math.hypot(dx,dy),ang=Math.atan2(dy,dx)*180/Math.PI;html+=`<div class="map-line" style="left:${a[0]}px;top:${a[1]}px;width:${len}px;transform:rotate(${ang}deg)"></div><div class="map-label" data-id="${r.id}" style="left:${(a[0]+b[0])/2}px;top:${(a[1]+b[1])/2}px">${r.condition}</div>`});names.forEach(n=>html+=`<div class="map-node ${["エチレン","ベンゼン","酢酸ナトリウム","炭化カルシウム"].includes(n)?"root":""}" data-name="${n}" style="left:${nodes[n][0]}px;top:${nodes[n][1]}px">${n}</div>`);html+='</div>';$("#mapCanvas").innerHTML=html;$("#mapCanvas").querySelectorAll(".map-label").forEach(el=>el.addEventListener("click",()=>{const r=routes.find(x=>x.id===el.dataset.id);$("#mapTitle").textContent=`${r.from} → ${r.to}`;$("#mapBody").innerHTML=`<b>条件：</b>${r.condition}<br><br>${r.exp}`}));$("#mapCanvas").querySelectorAll(".map-node").forEach(el=>el.addEventListener("click",()=>{const name=el.dataset.name,out=routes.filter(r=>r.from===name);$("#mapTitle").textContent=name;$("#mapBody").innerHTML=out.length?out.map(r=>`${r.condition} → ${r.to}`).join("<br>"):"ここから進む代表反応は未登録です。"}))}
+function renderMap(){
+  const groups = [
+    {
+      title:"脂肪族：エチレン系列",
+      y:70,
+      nodes:[
+        ["炭化カルシウム",90,70],["アセチレン",270,70],["エチレン",450,70],["エタノール",630,70],["アセトアルデヒド",850,70],["酢酸",1060,70],["酢酸エチル",1270,70],
+        ["ポリエチレン",450,190],["ジエチルエーテル",630,190],["アセトン",850,190]
+      ]
+    },
+    {
+      title:"芳香族：ベンゼン系列",
+      y:340,
+      nodes:[
+        ["ベンゼン",90,360],["クロロベンゼン",300,300],["ベンゼンスルホン酸",300,420],["ニトロベンゼン",520,360],["アニリン",740,360],["塩化ベンゼンジアゾニウム",1000,300],["アゾ染料",1260,300],
+        ["フェノール",740,500],["安息香酸",1000,500],["サリチル酸",1260,500],["アセチルサリチル酸",1500,500]
+      ]
+    },
+    {
+      title:"高分子・天然高分子",
+      y:650,
+      nodes:[
+        ["塩化ビニル",90,690],["ポリ塩化ビニル",300,690],["スチレン",520,690],["ポリスチレン",740,690],["PET",1000,690],["ナイロン66",1260,690],
+        ["グルコース",90,820],["デンプン",300,820],["セルロース",520,820],["アミノ酸",740,820],["タンパク質",1000,820]
+      ]
+    }
+  ];
+
+  const nodes = {};
+  groups.forEach(g=>g.nodes.forEach(([name,x,y])=>{nodes[name]=[x,y]}));
+
+  let html = '<div class="stage clear-map">';
+  groups.forEach(g=>{
+    html += `<div class="map-group-title" style="left:30px;top:${g.y-55}px">${g.title}</div>`;
+  });
+
+  routes.forEach(r=>{
+    const a = nodes[r.from], b = nodes[r.to];
+    if(!a || !b) return;
+    const dx=b[0]-a[0], dy=b[1]-a[1], len=Math.hypot(dx,dy), ang=Math.atan2(dy,dx)*180/Math.PI;
+    html += `<div class="map-line" style="left:${a[0]}px;top:${a[1]}px;width:${len}px;transform:rotate(${ang}deg)"></div>`;
+    html += `<div class="map-label" data-id="${r.id}" style="left:${(a[0]+b[0])/2}px;top:${(a[1]+b[1])/2}px">${r.condition}</div>`;
+  });
+
+  Object.entries(nodes).forEach(([name,pos])=>{
+    const root = ["炭化カルシウム","エチレン","ベンゼン","グルコース","アミノ酸"].includes(name) ? "root" : "";
+    html += `<div class="map-node ${root}" data-name="${name}" style="left:${pos[0]}px;top:${pos[1]}px">${name}</div>`;
+  });
+  html += '</div>';
+
+  $("#mapCanvas").innerHTML = html;
+  $("#mapCanvas").querySelectorAll(".map-label").forEach(el=>el.addEventListener("click",()=>{
+    const r=routes.find(x=>x.id===el.dataset.id);
+    if(!r) return;
+    $("#mapTitle").textContent=`${r.from} → ${r.to}`;
+    $("#mapBody").innerHTML=`<b>条件：</b>${r.condition}<br><br>${r.exp || ""}`;
+  }));
+  $("#mapCanvas").querySelectorAll(".map-node").forEach(el=>el.addEventListener("click",()=>{
+    const name=el.dataset.name;
+    const out=routes.filter(r=>r.from===name);
+    const inc=routes.filter(r=>r.to===name);
+    $("#mapTitle").textContent=name;
+    $("#mapBody").innerHTML=
+      `<b>ここから進む反応</b><br>${out.length?out.map(r=>`${r.condition} → ${r.to}`).join("<br>"):"なし"}<br><br>`+
+      `<b>ここに来る反応</b><br>${inc.length?inc.map(r=>`${r.from} → ${r.condition}`).join("<br>"):"なし"}`;
+  }));
+}
 function renderAll(){renderSummary();renderUnits();renderRecords();renderDict();renderMap()}
 $$(".nav").forEach(n=>n.addEventListener("click",()=>{
   const page = n.dataset.page;
-  if(page==="qa"){ start("qa", null, $("#unitSelect")?.value || state.selectedUnit); return; }
-  if(page==="tf"){ start("tf", null, $("#unitSelect")?.value || state.selectedUnit); return; }
-  if(page==="choice"){ start("choice", null, $("#unitSelect")?.value || state.selectedUnit); return; }
-  if(page==="route"){ start("route", null, $("#unitSelect")?.value || state.selectedUnit); return; }
+  const unitId = $("#unitSelect")?.value || state.selectedUnit;
+  if(page==="qa"){ start("qa", null, unitId); return; }
+  if(page==="tf"){ start("tf", null, unitId); return; }
+  if(page==="choice"){ start("choice", null, unitId); return; }
+  if(page==="route"){ start("route", null, unitId); return; }
   showPage(page);
 }));
 $$("[data-start]").forEach(b=>b.addEventListener("click",()=>start(b.dataset.start,null,$("#unitSelect").value)));

@@ -22,3 +22,50 @@
 .unit-row:hover{
   background:#f8fbff;
 }
+
+
+/* v7.4: clearer reaction map */
+.map-canvas{
+  min-height:900px;
+  background:
+    linear-gradient(#ffffff,#ffffff) padding-box,
+    linear-gradient(135deg,#bfdbfe,#dbeafe) border-box;
+}
+.clear-map{
+  position:relative;
+  min-width:1580px;
+  min-height:900px;
+  background:
+    linear-gradient(180deg,rgba(239,246,255,.7),rgba(255,255,255,.9));
+}
+.map-group-title{
+  position:absolute;
+  font-weight:1000;
+  font-size:18px;
+  color:#1d4ed8;
+  background:#eff6ff;
+  border:1px solid #bfdbfe;
+  border-radius:999px;
+  padding:8px 14px;
+}
+.map-node{
+  min-width:118px;
+  text-align:center;
+  white-space:nowrap;
+  z-index:3;
+}
+.map-line{
+  z-index:1;
+  height:4px;
+  opacity:.9;
+}
+.map-label{
+  z-index:4;
+  white-space:nowrap;
+  font-size:12px;
+  box-shadow:0 4px 10px rgba(0,0,0,.06);
+}
+.map-detail{
+  position:sticky;
+  top:16px;
+}
