@@ -17,6 +17,7 @@
       <button class="nav" data-page="choice">🔘 選択問題</button>
       <button class="nav" data-page="route">🧬 製法クイズ</button>
       <button class="nav" data-page="map">🗺️ 合成マップ</button>
+      <button class="nav" data-page="print">📝 学習プリント</button>
       <button class="nav" data-page="dict">📖 図鑑</button>
       <button class="nav" data-page="record">📊 学習記録</button>
     </nav>
@@ -81,6 +82,26 @@
 
     <section id="map" class="page"><div class="page-head"><h2>合成マップ</h2><p>代表的な製法・反応ルートを矢印で整理。</p></div><div class="map-layout"><div id="mapCanvas" class="map-canvas"></div><aside class="map-detail"><h3 id="mapTitle">反応を選択</h3><p id="mapBody">物質や条件をクリックすると説明が出ます。</p></aside></div></section>
     <section id="dict" class="page"><div class="page-head"><h2>図鑑</h2><input id="dictSearch" placeholder="用語を検索"></div><div id="dictGrid" class="dict-grid"></div></section>
+    
+    <section id="print" class="page">
+      <div class="page-head"><h2>学習プリント</h2><p>プリント内容を文字起こしし、穴埋めを選択式で学習できます。</p></div>
+      <div class="print-layout">
+        <aside class="print-list" id="printList"></aside>
+        <article class="print-card">
+          <div class="print-head">
+            <div>
+              <p id="printSource">プリント</p>
+              <h2 id="printTitle">単元を選択してください</h2>
+            </div>
+            <button id="printStartBtn" class="primary">穴埋めを始める →</button>
+          </div>
+          <div id="printBody" class="print-body"></div>
+          <h3>穴埋めチェック</h3>
+          <div id="printCloze" class="print-cloze"></div>
+        </article>
+      </div>
+    </section>
+
     <section id="record" class="page"><div class="page-head"><h2>学習記録</h2><p>単元別の進捗です。</p></div><div class="record-panel"><table><thead><tr><th>分野</th><th>正解</th><th>挑戦</th><th>習熟度</th><th>問題数</th></tr></thead><tbody id="recordRows"></tbody></table></div><h2>弱点・ブックマーク</h2><div id="weakList" class="weak-list"></div></section>
   </main>
   <script type="module" src="./app.js"></script>

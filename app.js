@@ -4,6 +4,7 @@ import { tf } from "./data/tf.js";
 import { choices } from "./data/choices.js";
 import { routes } from "./data/routes.js";
 import { dictionary } from "./data/dictionary.js";
+import { lessons } from "./data/lessons.js";
 
 const $=q=>document.querySelector(q), $$=q=>[...document.querySelectorAll(q)];
 const LS="chemquest-organic-v7";
@@ -91,7 +92,29 @@ function startWeak(){const items=allItems().filter(x=>state.wrong[key(x.type,x.i
 function startBook(){const items=allItems().filter(x=>state.bookmarks?.[key(x.type,x.id)]);startMixed(items)}
 function startMixed(items){if(!items.length){alert("対象の問題がありません。");return}const first=items[0].type;const list=items.filter(x=>x.type===first);if(first==="choice")start("choice",list);if(first==="qa")start("qa",list);if(first==="tf")start("tf",list);if(first==="route")start("route",list)}
 function showQa(){const q=sets.qa[idx];if(!q)return;$("#qaUnitTitle").textContent=units.find(u=>u.id===q.unit).title;$("#qaProgress").textContent=`${idx+1} / ${sets.qa.length}`;$("#qaQuestion").textContent=q.q;$("#answerBox").classList.add("hidden");$("#qaJudge").classList.add("hidden");$("#answerBox").innerHTML="";renderQaChoices(q)}
-function renderQaChoices(q){const opts=shuffle(q.choices||[]);$("#qaChoices").innerHTML=opts.map(c=>`<button class="choice">${c}</button>`).join("");$("#qaChoices").querySelectorAll(".choice").forEach(btn=>btn.addEventListener("click",()=>{const ok=btn.textContent===q.a;$("#qaChoices").querySelectorAll(".choice").forEach(b=>{if(b.textContent===q.a)b.classList.add("correct");else if(b===btn)b.classList.add("wrong");b.disabled=true});mark("qa",q,ok);$("#answerBox").classList.remove("hidden");$("#qaJudge").classList.remove("hidden");$("#answerBox").innerHTML=`<b>答え：</b>${q.a}<br><br><b>解説：</b>${q.exp}`}))}
+function renderQaChoices(q){
+  const opts=shuffle(uniqueOptions(q.a, q.choices || []));
+  $("#qaChoices").innerHTML=opts.map(c=>`<button class="choice">${c}</button>`).join("");
+  $("#qaChoices").querySelectorAll(".choice").forEach(btn=>btn.addEventListener("click",()=>{
+    const ok = optionKey(btn.textContent) === optionKey(q.a);
+    if(ok){
+      $("#qaChoices").querySelectorAll(".choice").forEach(b=>{
+        if(optionKey(b.textContent)===optionKey(q.a)) b.classList.add("correct");
+        b.disabled=true;
+      });
+      mark("qa",q,true);
+      $("#answerBox").classList.remove("hidden");
+      $("#qaJudge").classList.remove("hidden");
+      $("#answerBox").innerHTML=`<b>答え：</b>${q.a}<br><br><b>解説：</b>${q.exp}`;
+    }else{
+      btn.classList.add("wrong");
+      btn.disabled=true;
+      mark("qa",q,false);
+      $("#answerBox").classList.remove("hidden");
+      $("#answerBox").innerHTML=`<b>もう一度選んでください。</b><br>${q.exp ? "ヒント："+q.exp : ""}`;
+    }
+  }));
+}
 function showQaAnswer(){const q=sets.qa[idx];$("#answerBox").classList.remove("hidden");$("#qaJudge").classList.remove("hidden");$("#answerBox").innerHTML=`<b>答え：</b>${q.a}<br><br><b>解説：</b>${q.exp}`}
 function nextQa(){if(idx<sets.qa.length-1){idx++;showQa()}else{showPage("home");renderAll()}}
 function prevQa(){if(idx>0){idx--;showQa()}}
@@ -99,9 +122,44 @@ function showTf(){const q=sets.tf[idx];if(!q)return;$("#tfUnitTitle").textConten
 function answerTf(ans){const q=sets.tf[idx],ok=ans===q.answer;mark("tf",q,ok);$("#tfFeedback").textContent=(ok?"正解！ ":"不正解。 ")+q.exp}
 function nextTf(){if(idx<sets.tf.length-1){idx++;showTf()}else{showPage("home");renderAll()}}
 function prevTf(){if(idx>0){idx--;showTf()}}
-function renderChoiceCommon(item, container, handler){const randomized=shuffle(item.choices||[]);container.innerHTML=randomized.map(c=>`<button class="choice">${c}</button>`).join("");container.querySelectorAll(".choice").forEach(btn=>btn.addEventListener("click",()=>handler(btn,item)))}
+function optionKey(s){
+  return String(s||"").replace(/\s/g,"").replace("ヨードホルムCHI3","ヨードホルム").replace("CHI3","ヨードホルム").replace("酸化銅(I)Cu2O","Cu2O").replace("銀","Ag");
+}
+function uniqueOptions(answer, opts){
+  const seen = new Set();
+  const ansKey = optionKey(answer);
+  const out = [];
+  for(const x of [answer, ...(opts||[])]){
+    const k = optionKey(x);
+    if(seen.has(k)) continue;
+    if(k===ansKey && x!==answer) continue;
+    seen.add(k);
+    out.push(x);
+  }
+  return out.slice(0,4);
+}
+function renderChoiceCommon(item, container, handler){
+  const randomized=shuffle(uniqueOptions(item.answer, item.choices || []));
+  container.innerHTML=randomized.map(c=>`<button class="choice">${c}</button>`).join("");
+  container.querySelectorAll(".choice").forEach(btn=>btn.addEventListener("click",()=>handler(btn,item)));
+}</button>`).join("");container.querySelectorAll(".choice").forEach(btn=>btn.addEventListener("click",()=>handler(btn,item)))}
 function showChoice(){const q=sets.choice[idx];if(!q)return;$("#choiceUnitTitle").textContent=units.find(u=>u.id===q.unit).title;$("#choiceProgress").textContent=`${idx+1} / ${sets.choice.length}`;$("#choiceQuestion").textContent=q.q;$("#choiceFeedback").textContent="";renderChoiceCommon(q,$("#choiceOptions"),answerChoice)}
-function answerChoice(btn,q){const ok=btn.textContent===q.answer;mark("choice",q,ok);$("#choiceOptions").querySelectorAll(".choice").forEach(b=>{if(b.textContent===q.answer)b.classList.add("correct");else if(b===btn)b.classList.add("wrong");b.disabled=true});$("#choiceFeedback").textContent=(ok?"正解！ ":"不正解。 ")+q.exp}
+function answerChoice(btn,q){
+  const ok = optionKey(btn.textContent) === optionKey(q.answer);
+  if(ok){
+    mark("choice",q,true);
+    $("#choiceOptions").querySelectorAll(".choice").forEach(b=>{
+      if(optionKey(b.textContent)===optionKey(q.answer)) b.classList.add("correct");
+      b.disabled=true;
+    });
+    $("#choiceFeedback").textContent="正解！ "+q.exp;
+  }else{
+    mark("choice",q,false);
+    btn.classList.add("wrong");
+    btn.disabled=true;
+    $("#choiceFeedback").textContent="不正解。もう一度選べます。";
+  }
+}
 function nextChoice(){if(idx<sets.choice.length-1){idx++;showChoice()}else{showPage("home");renderAll()}}
 function prevChoice(){if(idx>0){idx--;showChoice()}}
 function showRoute(){
@@ -130,79 +188,101 @@ function showRoute(){
   const item = {...r, choices:shuffle(opts), answer:r.answer};
   renderChoiceCommon(item,$("#routeChoices"),answerRoute);
 }
-function answerRoute(btn,r){const ok=btn.textContent===r.answer;mark("route",r,ok);$("#routeChoices").querySelectorAll(".choice").forEach(b=>{if(b.textContent===r.answer)b.classList.add("correct");else if(b===btn)b.classList.add("wrong");b.disabled=true});$("#routeFeedback").textContent=(ok?"正解！ ":"不正解。 ")+r.exp}
+function answerRoute(btn,r){
+  const ok = optionKey(btn.textContent) === optionKey(r.answer);
+  if(ok){
+    mark("route",r,true);
+    $("#routeChoices").querySelectorAll(".choice").forEach(b=>{
+      if(optionKey(b.textContent)===optionKey(r.answer)) b.classList.add("correct");
+      b.disabled=true;
+    });
+    $("#routeFeedback").textContent="正解！ "+r.exp;
+  }else{
+    mark("route",r,false);
+    btn.classList.add("wrong");
+    btn.disabled=true;
+    $("#routeFeedback").textContent="不正解。もう一度選べます。";
+  }
+}
 function nextRoute(){if(idx<sets.route.length-1){idx++;showRoute()}else{showPage("home");renderAll()}}
 function prevRoute(){if(idx>0){idx--;showRoute()}}
 function renderRecords(){const rows=units.map(u=>{const s=stats(u.id);return `<tr><td>${u.title}</td><td>${s.correct}</td><td>${s.tries}</td><td>${s.rate}%</td><td>${s.total}</td></tr>`}).join("");$("#recordRows").innerHTML=rows;const flagged=allItems().filter(x=>state.wrong[key(x.type,x.id)]||state.bookmarks?.[key(x.type,x.id)]);$("#weakList").innerHTML=flagged.length?flagged.map(x=>`<article class="weak-card"><b>${units.find(u=>u.id===x.unit)?.title||""}</b><p>${x.q||x.text}</p><small>${x.exp||""}</small></article>`).join(""):""}
 function renderDict(){const w=($("#dictSearch").value||"").trim();const list=dictionary.filter(d=>!w||`${d.term}${d.category}${d.formula}${d.desc}`.includes(w));$("#dictGrid").innerHTML=list.map(d=>`<article class="dict-card"><span class="tag">${d.category}</span><h3>${d.term}</h3><p><b>${d.formula}</b></p><p>${d.desc}</p></article>`).join("")}
 function renderMap(){
-  const groups = [
-    {
-      title:"脂肪族：エチレン系列",
-      y:70,
-      nodes:[
-        ["炭化カルシウム",90,70],["アセチレン",270,70],["エチレン",450,70],["エタノール",630,70],["アセトアルデヒド",850,70],["酢酸",1060,70],["酢酸エチル",1270,70],
-        ["ポリエチレン",450,190],["ジエチルエーテル",630,190],["アセトン",850,190]
-      ]
-    },
-    {
-      title:"芳香族：ベンゼン系列",
-      y:340,
-      nodes:[
-        ["ベンゼン",90,360],["クロロベンゼン",300,300],["ベンゼンスルホン酸",300,420],["ニトロベンゼン",520,360],["アニリン",740,360],["塩化ベンゼンジアゾニウム",1000,300],["アゾ染料",1260,300],
-        ["フェノール",740,500],["安息香酸",1000,500],["サリチル酸",1260,500],["アセチルサリチル酸",1500,500]
-      ]
-    },
-    {
-      title:"高分子・天然高分子",
-      y:650,
-      nodes:[
-        ["塩化ビニル",90,690],["ポリ塩化ビニル",300,690],["スチレン",520,690],["ポリスチレン",740,690],["PET",1000,690],["ナイロン66",1260,690],
-        ["グルコース",90,820],["デンプン",300,820],["セルロース",520,820],["アミノ酸",740,820],["タンパク質",1000,820]
-      ]
-    }
+  const rows = [
+    {title:"脂肪族：エチレン系列", y:90, nodes:[["炭化カルシウム",90,100],["アセチレン",360,100],["エチレン",660,100],["エタノール",960,100],["アセトアルデヒド",1280,100],["酢酸",1580,100],["酢酸エチル",1880,100],["ポリエチレン",660,260],["ジエチルエーテル",960,260],["アセトン",1280,260]]},
+    {title:"芳香族：ベンゼン系列", y:430, nodes:[["ベンゼン",90,470],["クロロベンゼン",380,390],["ベンゼンスルホン酸",380,550],["ニトロベンゼン",700,470],["アニリン",1020,470],["塩化ベンゼンジアゾニウム",1380,390],["アゾ染料",1760,390],["フェノール",1020,620],["安息香酸",1380,620],["サリチル酸",1760,620],["アセチルサリチル酸",2140,620]]},
+    {title:"高分子・天然高分子", y:790, nodes:[["塩化ビニル",90,840],["ポリ塩化ビニル",380,840],["スチレン",700,840],["ポリスチレン",1020,840],["PET",1380,840],["ナイロン66",1760,840],["グルコース",90,1000],["デンプン",380,1000],["セルロース",700,1000],["アミノ酸",1020,1000],["タンパク質",1380,1000]]}
   ];
-
-  const nodes = {};
-  groups.forEach(g=>g.nodes.forEach(([name,x,y])=>{nodes[name]=[x,y]}));
-
-  let html = '<div class="stage clear-map">';
-  groups.forEach(g=>{
-    html += `<div class="map-group-title" style="left:30px;top:${g.y-55}px">${g.title}</div>`;
-  });
-
+  const nodes={};
+  rows.forEach(row=>row.nodes.forEach(([name,x,y])=>nodes[name]=[x,y]));
+  let html='<div class="stage clear-map wide-map">';
+  rows.forEach(row=>{html += `<div class="map-group-title" style="left:30px;top:${row.y-55}px">${row.title}</div>`;});
   routes.forEach(r=>{
-    const a = nodes[r.from], b = nodes[r.to];
+    const a=nodes[r.from], b=nodes[r.to];
     if(!a || !b) return;
     const dx=b[0]-a[0], dy=b[1]-a[1], len=Math.hypot(dx,dy), ang=Math.atan2(dy,dx)*180/Math.PI;
-    html += `<div class="map-line" style="left:${a[0]}px;top:${a[1]}px;width:${len}px;transform:rotate(${ang}deg)"></div>`;
-    html += `<div class="map-label" data-id="${r.id}" style="left:${(a[0]+b[0])/2}px;top:${(a[1]+b[1])/2}px">${r.condition}</div>`;
+    html+=`<div class="map-line" style="left:${a[0]}px;top:${a[1]}px;width:${len}px;transform:rotate(${ang}deg)"></div>`;
+    html+=`<div class="map-label" data-id="${r.id}" style="left:${(a[0]+b[0])/2}px;top:${(a[1]+b[1])/2}px">${r.condition}</div>`;
   });
-
   Object.entries(nodes).forEach(([name,pos])=>{
-    const root = ["炭化カルシウム","エチレン","ベンゼン","グルコース","アミノ酸"].includes(name) ? "root" : "";
-    html += `<div class="map-node ${root}" data-name="${name}" style="left:${pos[0]}px;top:${pos[1]}px">${name}</div>`;
+    const root=["炭化カルシウム","エチレン","ベンゼン","グルコース","アミノ酸"].includes(name)?"root":"";
+    html+=`<div class="map-node ${root}" data-name="${name}" style="left:${pos[0]}px;top:${pos[1]}px">${name}</div>`;
   });
-  html += '</div>';
-
-  $("#mapCanvas").innerHTML = html;
+  html+='</div>';
+  $("#mapCanvas").innerHTML=html;
   $("#mapCanvas").querySelectorAll(".map-label").forEach(el=>el.addEventListener("click",()=>{
     const r=routes.find(x=>x.id===el.dataset.id);
     if(!r) return;
     $("#mapTitle").textContent=`${r.from} → ${r.to}`;
-    $("#mapBody").innerHTML=`<b>条件：</b>${r.condition}<br><br>${r.exp || ""}`;
+    $("#mapBody").innerHTML=`<b>条件：</b>${r.condition}<br><br>${r.exp||""}`;
   }));
   $("#mapCanvas").querySelectorAll(".map-node").forEach(el=>el.addEventListener("click",()=>{
     const name=el.dataset.name;
     const out=routes.filter(r=>r.from===name);
     const inc=routes.filter(r=>r.to===name);
     $("#mapTitle").textContent=name;
-    $("#mapBody").innerHTML=
-      `<b>ここから進む反応</b><br>${out.length?out.map(r=>`${r.condition} → ${r.to}`).join("<br>"):"なし"}<br><br>`+
-      `<b>ここに来る反応</b><br>${inc.length?inc.map(r=>`${r.from} → ${r.condition}`).join("<br>"):"なし"}`;
+    $("#mapBody").innerHTML=`<b>ここから進む反応</b><br>${out.length?out.map(r=>`${r.condition} → ${r.to}`).join("<br>"):"なし"}<br><br><b>ここに来る反応</b><br>${inc.length?inc.map(r=>`${r.from} → ${r.condition}`).join("<br>"):"なし"}`;
   }));
 }
-function renderAll(){renderSummary();renderUnits();renderRecords();renderDict();renderMap()}
+
+function renderPrint(){
+  if(!$("#printList")) return;
+  $("#printList").innerHTML = lessons.map((l,i)=>`<button class="print-item ${i===0?"active":""}" data-index="${i}">${l.title}<small>${l.source}</small></button>`).join("");
+  $("#printList").querySelectorAll(".print-item").forEach(btn=>btn.addEventListener("click",()=>showPrint(Number(btn.dataset.index))));
+  showPrint(0);
+}
+function showPrint(i){
+  const l = lessons[i];
+  if(!l) return;
+  $("#printList").querySelectorAll(".print-item").forEach((b,idx)=>b.classList.toggle("active",idx===i));
+  $("#printSource").textContent = l.source;
+  $("#printTitle").textContent = l.title;
+  $("#printBody").innerHTML = l.body.map(x=>`<p>${x}</p>`).join("");
+  $("#printCloze").innerHTML = l.cloze.map((c,idx)=>`<div class="cloze-card"><h4>${idx+1}. ${c.q}</h4><div class="choices mini">${shuffle(c.choices).map(o=>`<button class="choice">${o}</button>`).join("")}</div><p class="cloze-feedback"></p></div>`).join("");
+  $("#printCloze").querySelectorAll(".cloze-card").forEach((card,idx)=>{
+    const c = l.cloze[idx];
+    card.querySelectorAll(".choice").forEach(btn=>btn.addEventListener("click",()=>{
+      const ok = optionKey(btn.textContent)===optionKey(c.answer);
+      const fb = card.querySelector(".cloze-feedback");
+      if(ok){
+        btn.classList.add("correct");
+        card.querySelectorAll(".choice").forEach(b=>b.disabled=true);
+        fb.textContent = "正解！ " + c.exp;
+      }else{
+        btn.classList.add("wrong");
+        btn.disabled=true;
+        fb.textContent = "不正解。もう一度選べます。";
+      }
+    }));
+  });
+  $("#printStartBtn").onclick = ()=> {
+    const converted = l.cloze.map((c,idx)=>({id:`print-${i}-${idx}`,unit:l.unit,q:c.q,choices:c.choices,answer:c.answer,exp:c.exp,type:"choice"}));
+    start("choice", converted, l.unit);
+  };
+}
+
+function renderAll(){renderSummary();renderUnits();renderRecords();renderDict();renderMap();renderPrint()}
 $$(".nav").forEach(n=>n.addEventListener("click",()=>{
   const page = n.dataset.page;
   const unitId = $("#unitSelect")?.value || state.selectedUnit;

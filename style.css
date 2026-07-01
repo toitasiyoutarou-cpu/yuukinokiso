@@ -69,3 +69,24 @@
   position:sticky;
   top:16px;
 }
+
+/* v7.5: wider map and print learning */
+.map-canvas{min-height:1120px;overflow:auto;}
+.wide-map{min-width:2280px;min-height:1120px;}
+.map-node{min-width:150px;padding:16px 22px;font-size:16px;}
+.map-label{font-size:13px;padding:7px 12px;}
+.map-line{height:5px;}
+.print-layout{display:grid;grid-template-columns:280px 1fr;gap:18px;}
+.print-list{background:white;border:1px solid #d8e7fb;border-radius:18px;padding:12px;height:max-content;}
+.print-item{display:block;width:100%;text-align:left;border:1px solid #dbeafe;background:#fff;border-radius:14px;padding:12px;margin-bottom:8px;font-weight:1000;color:#1d4ed8;cursor:pointer;}
+.print-item small{display:block;color:#64748b;font-weight:800;margin-top:4px;}
+.print-item.active{background:#eff6ff;border-color:#60a5fa;}
+.print-card{background:white;border:1px solid #d8e7fb;border-radius:22px;padding:22px;box-shadow:0 12px 34px rgba(37,99,235,.06);}
+.print-head{display:flex;justify-content:space-between;gap:14px;align-items:center;border-bottom:1px solid #e5edf8;padding-bottom:14px;margin-bottom:14px;}
+.print-head p{color:#2563eb;font-weight:1000;margin:0 0 4px;}
+.print-head h2{margin:0;}
+.print-body p{line-height:1.9;font-weight:800;border-left:4px solid #bfdbfe;padding:6px 0 6px 12px;margin:8px 0;background:#f8fbff;border-radius:8px;}
+.cloze-card{border:1px solid #dbeafe;border-radius:18px;padding:16px;margin:12px 0;background:#fff;}
+.cloze-card h4{font-size:18px;margin:0 0 10px;}
+.cloze-feedback{font-weight:900;min-height:24px;}
+@media(max-width:900px){.print-layout{grid-template-columns:1fr}}
