@@ -6,10 +6,28 @@ export const dictionary = [
     "desc": "有機化合物の性質を特徴づける原子団。"
   },
   {
+    "term": "構造異性体",
+    "category": "異性体",
+    "formula": "同じ分子式",
+    "desc": "分子式は同じだが原子のつながり方が異なる。"
+  },
+  {
+    "term": "立体異性体",
+    "category": "異性体",
+    "formula": "空間配置",
+    "desc": "分子式・つながり方は同じだが立体配置が異なる。"
+  },
+  {
+    "term": "不斉炭素原子",
+    "category": "異性体",
+    "formula": "C*",
+    "desc": "4つの異なる原子または原子団が結合した炭素原子。"
+  },
+  {
     "term": "カルボキシ基",
     "category": "官能基",
     "formula": "-COOH",
-    "desc": "カルボン酸に含まれ、酸性を示す。"
+    "desc": "カルボン酸に含まれ，酸性を示す。"
   },
   {
     "term": "ヒドロキシ基",
@@ -27,7 +45,7 @@ export const dictionary = [
     "term": "カルボニル基",
     "category": "官能基",
     "formula": ">C=O",
-    "desc": "アルデヒド・ケトンに含まれる。"
+    "desc": "アルデヒドやケトンに含まれる。"
   },
   {
     "term": "アミノ基",
@@ -48,6 +66,24 @@ export const dictionary = [
     "desc": "カルボン酸とアルコールから生成する。"
   },
   {
+    "term": "アルカン",
+    "category": "炭化水素",
+    "formula": "CnH2n+2",
+    "desc": "単結合のみをもつ鎖式飽和炭化水素。"
+  },
+  {
+    "term": "アルケン",
+    "category": "炭化水素",
+    "formula": "CnH2n",
+    "desc": "二重結合をもつ不飽和炭化水素。"
+  },
+  {
+    "term": "アルキン",
+    "category": "炭化水素",
+    "formula": "CnH2n-2",
+    "desc": "三重結合をもつ不飽和炭化水素。"
+  },
+  {
     "term": "銀鏡反応",
     "category": "確認反応",
     "formula": "Ag析出",
@@ -63,7 +99,7 @@ export const dictionary = [
     "term": "ヨードホルム反応",
     "category": "確認反応",
     "formula": "CHI3黄色沈殿",
-    "desc": "CH3CO- や CH3CH(OH)- 型構造の手がかり。"
+    "desc": "CH3CO- または CH3CH(OH)- 型構造の手がかり。"
   },
   {
     "term": "塩化鉄(III)反応",
@@ -100,5 +136,11 @@ export const dictionary = [
     "category": "高分子",
     "formula": "C=Cが開く",
     "desc": "エチレンからポリエチレンなど。"
+  },
+  {
+    "term": "縮合重合",
+    "category": "高分子",
+    "formula": "小分子脱離",
+    "desc": "PETやナイロン66など。"
   }
 ];
