@@ -9,3 +9,16 @@
 .unit-card.selected .start-main{
   background:#dbeafe;
 }
+
+
+/* v7.3: sidebar and unit links fixed */
+.nav{
+  user-select:none;
+}
+.unit-row.selected,
+.unit-card.selected{
+  outline:4px solid rgba(37,99,235,.13);
+}
+.unit-row:hover{
+  background:#f8fbff;
+}
